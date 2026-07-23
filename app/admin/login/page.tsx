@@ -1,43 +1,52 @@
 'use client';
 
+import { useTheme } from '@/app/providers';
+import { AnimatePresence, motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { 
-  FiMail, 
-  FiLock, 
-  FiLogIn, 
-  FiEye, 
-  FiEyeOff,
-  FiAlertCircle,
-  FiShield,
-  FiKey,
-  FiUserCheck
-} from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import {
+  FaArrowRight,
+  FaCheckCircle,
+  FaEnvelope,
+  FaExclamationTriangle,
+  FaEye,
+  FaEyeSlash,
+  FaLock,
+  FaShieldAlt,
+} from 'react-icons/fa';
+import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
 
 export default function LoginPage() {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [mounted, setMounted] = useState(false);
+  
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
-    // Check for saved email in localStorage
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) {
-      setCredentials(prev => ({ ...prev, email: savedEmail }));
+      setCredentials((prev) => ({ ...prev, email: savedEmail }));
       setRememberMe(true);
     }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    if (!credentials.email || !credentials.password) {
+      setErrorMessage('Please enter both email and password.');
+      setStatus('error');
+      return;
+    }
+
+    setErrorMessage('');
+    setStatus('submitting');
 
     try {
       const result = await signIn('credentials', {
@@ -47,245 +56,233 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
-        setIsLoading(false);
+        setErrorMessage('Invalid email or password. Please try again.');
+        setStatus('error');
       } else {
-        // Handle remember me
         if (rememberMe) {
           localStorage.setItem('rememberedEmail', credentials.email);
         } else {
           localStorage.removeItem('rememberedEmail');
         }
         
-        // Successful login
-        router.push('/admin/dashboard');
+        setStatus('success');
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 1000);
       }
-    } catch (error) {
-      setError('An error occurred. Please try again.');
-      setIsLoading(false);
+    } catch {
+      setErrorMessage('An unexpected authentication error occurred.');
+      setStatus('error');
     }
   };
 
-  const handleDemoLogin = async () => {
-    setCredentials({ email: 'demo@example.com', password: 'demo123' });
-    setTimeout(() => {
-      handleSubmit(new Event('submit') as any);
-    }, 100);
+  const handleDemoFill = () => {
+    setCredentials({
+      email: 'yeneshdabot2022@gmail.com',
+      password: 'admin123',
+    });
+    setErrorMessage('');
+    setStatus('idle');
   };
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0A0A0A] flex items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+    <div className="relative min-h-screen flex items-center justify-center bg-white dark:bg-black text-zinc-900 dark:text-white px-4 py-12 overflow-hidden transition-colors duration-300">
+      
+      {/* Soft Ambient Background Lighting */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -left-32 w-[550px] h-[550px] rounded-full bg-emerald-500/10 dark:bg-emerald-950/20 blur-[140px]" />
+        <div className="absolute bottom-10 -right-32 w-[550px] h-[550px] rounded-full bg-emerald-400/10 dark:bg-emerald-900/15 blur-[140px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-40" />
       </div>
 
-      {/* Main Container */}
-      <div className="max-w-md w-full relative z-10">
-        {/* Logo/Brand Section */}
+      {/* Top Floating Theme Toggle */}
+      <div className="absolute top-6 right-6 z-20">
+        <button
+          onClick={toggleTheme}
+          className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center transition-colors shadow-sm"
+          title="Toggle Theme"
+        >
+          {theme === 'dark' ? (
+            <HiOutlineSun className="w-5 h-5 text-amber-400" />
+          ) : (
+            <HiOutlineMoon className="w-5 h-5 text-emerald-600" />
+          )}
+        </button>
+      </div>
+
+      {/* Main Login Container */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="w-full max-w-md relative z-10"
+      >
+        {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/25 mb-4">
-            <FiShield className="text-white text-4xl" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/20 mb-4">
+            <FaShieldAlt className="text-2xl" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Admin Portal</h2>
-          <p className="text-gray-400">Secure access to your dashboard</p>
+
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+            Admin Portal
+          </h1>
+
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+            Sign in to manage your portfolio content and settings
+          </p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-[#0F0F0F]/80 backdrop-blur-xl rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
-          {/* Card Header */}
-          <div className="px-8 py-6 border-b border-gray-800/50">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Welcome Back</h3>
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <FiKey className="text-indigo-400" />
-                <span>Secure Login</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMail className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  required
-                  value={credentials.email}
-                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-3 bg-[#1A1A1A] border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition"
-                  placeholder="admin@example.com"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiLock className="h-5 w-5 text-gray-500" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  required
-                  value={credentials.password}
-                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                  className="block w-full pl-10 pr-10 py-3 bg-[#1A1A1A] border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition"
-                  placeholder="••••••••"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 transition"
-                >
-                  {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 bg-[#1A1A1A] border-gray-700 rounded text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
-                  Remember me
-                </label>
-              </div>
-              <button
-                type="button"
-                onClick={() => alert('Password reset functionality would go here')}
-                className="text-sm text-indigo-400 hover:text-indigo-300 transition"
+        {/* Card Container */}
+        <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl transition-all">
+          
+          <AnimatePresence mode="wait">
+            {status === 'success' ? (
+              /* Success State Screen */
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="text-center py-8"
               >
-                Forgot password?
-              </button>
-            </div>
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
+                  <FaCheckCircle className="text-3xl" />
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-1">
+                  Access Granted
+                </h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold mb-4">
+                  Redirecting to Admin Dashboard...
+                </p>
+                <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+              </motion.div>
+            ) : (
+              /* Form View */
+              <motion.form
+                key="form"
+                initial={{ opacity: 1 }}
+                onSubmit={handleSubmit}
+                className="space-y-5"
+              >
+                {/* Email Field */}
+                <div>
+                  <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                      <FaEnvelope className="text-sm" />
+                    </div>
+                    <input
+                      type="email"
+                      id="email"
+                      required
+                      value={credentials.email}
+                      onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="yenesh2022@gmail.com"
+                      disabled={status === 'submitting'}
+                    />
+                  </div>
+                </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
-                <FiAlertCircle className="text-red-400 text-lg flex-shrink-0" />
-                <p className="text-sm text-red-400">{error}</p>
-              </div>
+                {/* Password Field */}
+                <div>
+                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                      <FaLock className="text-sm" />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      required
+                      value={credentials.password}
+                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="••••••••"
+                      disabled={status === 'submitting'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                    >
+                      {showPassword ? <FaEyeSlash className="text-base" /> : <FaEye className="text-base" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember Me Option */}
+                <div className="flex items-center justify-between pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                    />
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold">
+                      Remember me
+                    </span>
+                  </label>
+                </div>
+
+                {/* Error Banner */}
+                {status === 'error' && errorMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2.5"
+                  >
+                    <FaExclamationTriangle className="text-sm shrink-0" />
+                    <span>{errorMessage}</span>
+                  </motion.div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={status === 'submitting'}
+                  className="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-black font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {status === 'submitting' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                      <span>Authenticating...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span>Sign In</span>
+                      <FaArrowRight className="text-xs" />
+                    </div>
+                  )}
+                </button>
+              </motion.form>
             )}
+          </AnimatePresence>
 
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="relative w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-lg font-medium transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden group"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Authenticating...</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <FiLogIn className="text-lg group-hover:translate-x-1 transition-transform" />
-                  <span>Sign In</span>
-                </div>
-              )}
-            </button>
-
-            {/* Demo Login */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-800"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[#0F0F0F] text-gray-500">Demo Access</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 rounded-lg font-medium transition-all border border-gray-700/50 flex items-center justify-center gap-2"
-            >
-              <FiUserCheck className="text-lg" />
-              <span>Use Demo Account</span>
-            </button>
-          </form>
-
-          {/* Footer */}
-          <div className="px-8 py-4 bg-[#0A0A0A]/50 border-t border-gray-800/50">
-            <div className="flex items-center justify-between text-xs text-gray-600">
-              <span>© 2024 Admin Portal</span>
-              <div className="flex items-center gap-4">
-                <button className="hover:text-gray-400 transition">Privacy</button>
-                <button className="hover:text-gray-400 transition">Terms</button>
-                <button className="hover:text-gray-400 transition">Help</button>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Security Badge */}
+        {/* Security Footer */}
         <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0F0F0F]/50 backdrop-blur-sm rounded-full border border-gray-800/50">
-            <FiShield className="text-indigo-400 text-sm" />
-            <span className="text-xs text-gray-400">256-bit SSL Encrypted Connection</span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-semibold">
+            <FaShieldAlt className="text-emerald-600 dark:text-emerald-400 text-xs" />
+            <span>Encrypted Session Protection</span>
+          </span>
         </div>
-      </div>
+      </motion.div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 }

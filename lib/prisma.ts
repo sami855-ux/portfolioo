@@ -1,33 +1,33 @@
-import { Pool } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
+import path from 'path';
+import { config } from 'dotenv';
+import { Pool as PgPool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+
+// Ensure environment variables from .env.local are loaded if Next.js hasn't loaded them yet
+if (!process.env.DATABASE_URL) {
+  config({ path: path.resolve(process.cwd(), '.env.local') });
+  config({ path: path.resolve(process.cwd(), '.env') });
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// For Prisma 7, we need to use an adapter
-// Using a simple connection pool adapter
-const connectionString = process.env.DATABASE_URL;
+function createPrismaClient(): PrismaClient {
+  const connectionString = "postgresql://neondb_owner:npg_OcpR6lFnX2Kq@ep-wandering-pond-axuq2mj0-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
-let prismaInstance: PrismaClient;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is not defined in environment variables or .env.local');
+  }
 
-if (connectionString?.includes('neon.tech')) {
-  // If using Neon, use the Neon adapter
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaNeon(pool);
-  prismaInstance = new PrismaClient({ adapter });
-} else {
-  // For local PostgreSQL, use driverAdapters with pg
-  const { Pool: PgPool } = require('pg');
-  const { PrismaPg } = require('@prisma/adapter-pg');
-  
+  // Use pg driver adapter for PostgreSQL (including Neon TCP connection)
   const pool = new PgPool({ connectionString });
   const adapter = new PrismaPg(pool);
-  prismaInstance = new PrismaClient({ adapter });
+  return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? prismaInstance;
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 

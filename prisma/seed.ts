@@ -25,7 +25,7 @@ const heroData = {
   resumeLink: '/resume.pdf',
   githubLink: 'https://github.com/johndoe',
   linkedinLink: 'https://linkedin.com/in/johndoe',
-  email: 'john@example.com',
+  email: 'yenesh2022@gmail.com',
 };
 
 const aboutData = {

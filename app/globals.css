@@ -2,8 +2,9 @@
 
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @layer base {
-  /* Modern CSS Reset */
   *,
   *::before,
   *::after {
@@ -13,11 +14,17 @@
   }
 
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 15, 23, 42;
-    --background-end-rgb: 11, 17, 32;
-    --accent-primary: 59, 130, 246;
-    --accent-secondary: 96, 165, 250;
+    --bg-color: #ffffff;
+    --text-color: #09090b;
+    --card-bg: #ffffff;
+    --card-border: #e4e4e7;
+  }
+
+  html.dark {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+    --card-bg: #18181b;
+    --card-border: #27272a;
   }
 
   html {
@@ -28,22 +35,23 @@
   }
 
   body {
-    color: rgb(var(--foreground-rgb));
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--background-start-rgb)),
-      rgb(var(--background-end-rgb))
-    );
+    color: var(--text-color);
+    background-color: var(--bg-color);
     min-height: 100vh;
-    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Typography */
+  /* Typography Design System */
   h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
   }
 
   /* Focus styles for accessibility */

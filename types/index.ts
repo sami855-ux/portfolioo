@@ -1,8 +1,8 @@
 // types/index.ts
 export interface SocialLinks {
-  github: string;
-  linkedin: string;
-  email: string;
+  github?: string;
+  linkedin?: string;
+  email?: string;
 }
 
 export interface Hero {
@@ -12,16 +12,18 @@ export interface Hero {
   tagline: string;
   profileImage: string;
   resumeLink: string;
-  socialLinks: SocialLinks;
+  githubLink?: string;
+  linkedinLink?: string;
+  email?: string;
+  socialLinks?: SocialLinks;
 }
 
-export interface UploadResponse {
-  url: string;
-  success: boolean;
-}
-
-export interface UploadError {
-  error: string;
+export interface ContactInfo {
+  email?: string;
+  location?: string;
+  phone?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
 }
 
 export interface About {

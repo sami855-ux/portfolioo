@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,13 +25,21 @@ import {
   FiStar,
   FiTrendingUp,
   FiUsers,
-  FiPieChart
+  FiPieChart,
+  FiAlertTriangle
 } from 'react-icons/fi';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut({ callbackUrl: '/admin/login' });
+  };
   const [stats, setStats] = useState({
     totalProjects: 12,
     totalSkills: 24,
@@ -228,7 +237,7 @@ export default function DashboardPage() {
           {/* Logout Button */}
           <div className="p-6 border-t border-gray-800/50">
             <button
-              onClick={() => signOut({ callbackUrl: '/admin/login' })}
+              onClick={() => setShowLogoutModal(true)}
               className="flex items-center gap-3 px-4 py-3 w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all"
             >
               <FiLogOut className="text-lg" />
@@ -430,6 +439,67 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Alert Dialog Modal */}
+      <AnimatePresence>
+        {showLogoutModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 12 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-2xl text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <FiAlertTriangle className="text-2xl text-red-500" />
+              </div>
+
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+                Confirm Sign Out
+              </h3>
+              
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
+                Are you sure you want to end your current session? You will need to sign in again to access admin tools.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutModal(false)}
+                  disabled={isLoggingOut}
+                  className="flex-1 py-3 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLogout}
+                  disabled={isLoggingOut}
+                  className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoggingOut ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Signing Out...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiLogOut className="text-sm" />
+                      <span>Sign Out</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -3,340 +3,212 @@
 import { Hero as HeroType } from '@/types';
 import { motion, useInView } from 'framer-motion';
 import Image from 'next/image';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
-    FaArrowRight,
-    FaDownload,
-    FaEnvelope,
-    FaGithub,
-    FaLinkedin
+  FaArrowRight,
+  FaCode,
+  FaDatabase,
+  FaDownload,
+  FaEnvelope,
+  FaGithub,
+  FaLayerGroup,
+  FaLinkedin,
+  FaNodeJs,
+  FaReact,
 } from 'react-icons/fa';
 
 export default function Hero({ data }: { data: HeroType }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
-  const [isHovered, setIsHovered] = useState(false);
+
+  const techStack = [
+    { name: 'React', icon: FaReact, color: 'text-emerald-500 dark:text-emerald-400' },
+    { name: 'Next.js', icon: FaCode, color: 'text-zinc-800 dark:text-zinc-200' },
+    { name: 'TypeScript', icon: FaCode, color: 'text-teal-600 dark:text-teal-400' },
+    { name: 'Node.js', icon: FaNodeJs, color: 'text-emerald-600 dark:text-emerald-400' },
+    { name: 'PostgreSQL', icon: FaDatabase, color: 'text-emerald-700 dark:text-lime-400' },
+    { name: 'Tailwind CSS', icon: FaLayerGroup, color: 'text-teal-600 dark:text-teal-300' },
+  ];
 
   return (
-    <section 
+    <section
+      id="hero"
       ref={ref}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-secondary-950"
+      className="relative min-h-[90vh] flex items-center justify-center bg-white dark:bg-black text-zinc-900 dark:text-white pt-28 pb-20 transition-colors duration-300"
     >
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Gradient orbs */}
-        <div className="absolute top-0 -left-40 w-[800px] h-[800px] rounded-full bg-primary-500/10 blur-[160px] animate-blob" />
-        <div className="absolute -bottom-40 -right-40 w-[800px] h-[800px] rounded-full bg-accent-500/10 blur-[160px] animate-blob animation-delay-2000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full">
-          <div className="absolute inset-0 bg-gradient-radial from-primary-500/20 via-transparent to-transparent" />
-        </div>
-
-        {/* Floating particles */}
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full"
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000),
-            }}
-            animate={{
-              y: [null, -200, 200, -200],
-              x: [null, 200, -200, 200],
-              scale: [1, 2, 1],
-              opacity: [0.2, 0.5, 0.2],
-            }}
-            transition={{
-              duration: Math.random() * 25 + 25,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-        ))}
-
-        {/* Grid overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px]" />
+      {/* Soft Ambient Background Lighting */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 -left-32 w-[550px] h-[550px] rounded-full bg-emerald-500/10 dark:bg-emerald-950/20 blur-[140px]" />
+        <div className="absolute bottom-10 -right-32 w-[550px] h-[550px] rounded-full bg-emerald-400/10 dark:bg-emerald-900/15 blur-[140px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-40" />
       </div>
 
-      <div className="container-custom relative z-10 py-20">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Left Content */}
+      <div className="container mx-auto px-4 md:px-8 relative z-10">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          
+          {/* Left Column: Headline & CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            initial={{ opacity: 0, x: -30 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-center lg:text-left"
+            className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left"
           >
-            {/* Animated badge */}
+            {/* Availability Badge */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 mb-8 hover:bg-primary-500/20 transition-all duration-300 cursor-default"
+              initial={{ opacity: 0, y: -10 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-6 shadow-sm"
             >
-              <span className="text-sm font-medium text-primary-300">Welcome to my portfolio</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Available for Hire</span>
             </motion.div>
 
-            {/* Name with gradient */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-tight">
-              {data.fullName.split(' ').map((word, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: 0.3 + i * 0.1 }}
-                  className="inline-block mr-3 last:mr-0"
-                >
-                  {i === data.fullName.split(' ').length - 1 ? (
-                    <span className="gradient-text-premium">{word}</span>
-                  ) : (
-                    word
-                  )}
-                </motion.span>
-              ))}
-            </h1>
-
-            {/* Professional Title with typing effect */}
-            <motion.h2
-              initial={{ opacity: 0 }}
-              animate={isInView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-6"
+            {/* Name */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-4 text-zinc-900 dark:text-white"
             >
-              <span className="gradient-text">
-                {data.professionalTitle}
+              Hi, I'm{' '}
+              <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-300 bg-clip-text text-transparent">
+                {data.fullName}
               </span>
+            </motion.h1>
+
+            {/* Title / Role */}
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-xl sm:text-2xl font-semibold text-zinc-600 dark:text-zinc-400 mb-6"
+            >
+              {data.professionalTitle}
             </motion.h2>
 
-            {/* Tagline with animated reveal */}
+            {/* Bio / Tagline */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-lg md:text-xl text-secondary-300 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0"
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-base sm:text-lg text-zinc-600 dark:text-zinc-300 max-w-xl mb-8 leading-relaxed font-normal"
             >
               {data.tagline}
             </motion.p>
 
-            {/* CTA Buttons */}
+            {/* Action Buttons & Links */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="flex flex-wrap gap-4 mb-8 justify-center lg:justify-start"
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-10"
             >
-              {/* Primary CTA */}
-              <motion.a
-                href={data.resumeLink}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative px-8 py-4 rounded-xl font-semibold text-white overflow-hidden"
+              <a
+                href="#projects"
+                className="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 shadow-md hover:shadow-emerald-500/20 transition-all duration-200"
               >
-                {/* Button background with animation */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-accent-500 group-hover:from-primary-400 group-hover:to-accent-400 transition-all duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                
-                {/* Button content */}
-                <span className="relative flex items-center gap-3">
-                  <FaDownload className="group-hover:animate-bounce" /> 
-                  Download Resume
-                </span>
-              </motion.a>
+                <span>View My Work</span>
+                <FaArrowRight className="text-xs" />
+              </a>
 
-              {/* Secondary CTA */}
-              <motion.a
-                href="#contact"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative px-8 py-4 rounded-xl font-semibold text-white overflow-hidden"
+              <a
+                href={data.resumeLink || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 hover:border-emerald-500/50 text-zinc-800 dark:text-zinc-200 text-sm font-semibold flex items-center gap-2 transition-colors duration-200 shadow-sm"
               >
-                <div className="absolute inset-0 border-2 border-primary-500/50 group-hover:border-primary-400 transition-all duration-300 rounded-xl" />
-                <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 transition-all duration-300" />
-                <span className="relative flex items-center gap-3">
-                  Contact Me
-                  <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
-                </span>
-              </motion.a>
-            </motion.div>
+                <FaDownload className="text-xs text-emerald-600 dark:text-emerald-400" />
+                <span>Resume</span>
+              </a>
 
-            {/* Social Links */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={isInView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="flex gap-6 justify-center lg:justify-start"
-            >
-              {data.socialLinks?.github && (
-                <motion.a
-                  href={data.socialLinks.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ y: -5, scale: 1.2 }}
-                  className="relative group"
-                >
-                  <div className="absolute inset-0 bg-primary-500 rounded-full blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary-500/30 group-hover:bg-primary-500/10 transition-all duration-300">
-                    <FaGithub className="text-2xl text-secondary-400 group-hover:text-primary-400 transition-colors duration-300" />
-                  </div>
-                </motion.a>
-              )}
-              
-              {data.socialLinks?.linkedin && (
-                <motion.a
-                  href={data.socialLinks.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ y: -5, scale: 1.2 }}
-                  className="relative group"
-                >
-                  <div className="absolute inset-0 bg-primary-500 rounded-full blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary-500/30 group-hover:bg-primary-500/10 transition-all duration-300">
-                    <FaLinkedin className="text-2xl text-secondary-400 group-hover:text-primary-400 transition-colors duration-300" />
-                  </div>
-                </motion.a>
-              )}
-              
-              {data.socialLinks?.email && (
-                <motion.a
-                  href={`mailto:${data.socialLinks.email}`}
-                  whileHover={{ y: -5, scale: 1.2 }}
-                  className="relative group"
-                >
-                  <div className="absolute inset-0 bg-primary-500 rounded-full blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary-500/30 group-hover:bg-primary-500/10 transition-all duration-300">
-                    <FaEnvelope className="text-2xl text-secondary-400 group-hover:text-primary-400 transition-colors duration-300" />
-                  </div>
-                </motion.a>
-              )}
-            </motion.div>
-
-            {/* Stats/Highlights */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.9 }}
-              className="mt-12 flex flex-wrap gap-8 justify-center lg:justify-start"
-            >
-              {[
-                { label: 'Years Experience', value: '1+' },
-                { label: 'Projects Completed', value: '20+' },
-                // { label: 'Happy Clients', value: '30+' },
-              ].map((stat, idx) => (
-                <div key={idx} className="text-center lg:text-left">
-                  <div className="text-2xl font-bold gradient-text">{stat.value}</div>
-                  <div className="text-sm text-secondary-400">{stat.label}</div>
-                </div>
-              ))}
+              {/* Social Links */}
+              <div className="flex items-center gap-2 pl-2">
+                {(data.githubLink || data.socialLinks?.github) && (
+                  <a
+                    href={data.githubLink || data.socialLinks?.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-white hover:border-emerald-500/50 flex items-center justify-center transition-colors duration-200 shadow-sm"
+                  >
+                    <FaGithub className="text-lg" />
+                  </a>
+                )}
+                {(data.linkedinLink || data.socialLinks?.linkedin) && (
+                  <a
+                    href={data.linkedinLink || data.socialLinks?.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-white hover:border-emerald-500/50 flex items-center justify-center transition-colors duration-200 shadow-sm"
+                  >
+                    <FaLinkedin className="text-lg" />
+                  </a>
+                )}
+                {(data.email || data.socialLinks?.email) && (
+                  <a
+                    href={`mailto:${data.email || data.socialLinks?.email}`}
+                    className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-white hover:border-emerald-500/50 flex items-center justify-center transition-colors duration-200 shadow-sm"
+                  >
+                    <FaEnvelope className="text-lg" />
+                  </a>
+                )}
+              </div>
             </motion.div>
           </motion.div>
 
-          {/* Right Content - Profile Image */}
+          {/* Right Visual Frame & Tech Badges */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            onHoverStart={() => setIsHovered(true)}
-            onHoverEnd={() => setIsHovered(false)}
-            className="relative flex justify-center"
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="lg:col-span-5 flex flex-col items-center"
           >
-            <div className="relative w-full max-w-md aspect-square">
-              {/* Animated rings */}
-              <motion.div
-                animate={{
-                  scale: isHovered ? 1.1 : 1,
-                  rotate: isHovered ? 180 : 0,
-                }}
-                transition={{ duration: 0.8 }}
-                className="absolute inset-0 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 rounded-full blur-3xl opacity-30"
-              />
-              
-              {/* Rotating ring */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-full border-2 border-dashed border-primary-500/30"
-              />
-              
-              {/* Inner rings */}
-              <div className="absolute inset-4 rounded-full border border-primary-500/20" />
-              <div className="absolute inset-8 rounded-full border border-accent-500/20" />
-
-              {/* Image container */}
-              <div className="absolute inset-12 rounded-full overflow-hidden border-4 border-primary-500/50 shadow-2xl shadow-primary-500/30">
-                <div className="relative w-full h-full">
+            <div className="relative w-full max-w-xs sm:max-w-sm aspect-square mb-8">
+              {/* Fully Rounded Profile Image Frame */}
+              <div className="relative w-full h-full rounded-full p-1.5 bg-gradient-to-b from-emerald-500/30 via-zinc-200 to-white dark:via-zinc-900 dark:to-zinc-900 border border-zinc-200 dark:border-emerald-500/40 overflow-hidden shadow-2xl">
+                <div className="relative w-full h-full rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-950">
                   <Image
-                    src={data.profileImage || '/placeholder.jpg'}
+                    src={data.profileImage || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop'}
                     alt={data.fullName}
                     fill
-                    className="object-cover scale-110 hover:scale-125 transition-transform duration-700"
+                    className="object-cover"
                     priority
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 dark:from-black/50 via-transparent to-transparent" />
                 </div>
               </div>
 
-              {/* Floating elements */}
-              <motion.div
-                animate={{
-                  y: [0, -20, 0],
-                  rotate: [0, 10, 0],
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-r from-primary-500 to-accent-500 rounded-2xl blur-xl opacity-60"
-              />
-              
-              <motion.div
-                animate={{
-                  y: [0, 20, 0],
-                  rotate: [0, -10, 0],
-                }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                className="absolute -bottom-4 -left-4 w-20 h-20 bg-gradient-to-r from-accent-500 to-primary-500 rounded-2xl blur-xl opacity-60"
-              />
+              {/* Centered Specialization Badge */}
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-zinc-800 shadow-xl backdrop-blur-md flex items-center gap-2.5 whitespace-nowrap z-10">
+                <div className="p-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <FaCode className="text-xs" />
+                </div>
+                <div className="text-xs">
+                  <span className="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold mr-1.5">Focus:</span>
+                  <span className="text-zinc-900 dark:text-white font-bold">Full-Stack Development</span>
+                </div>
+              </div>
+            </div>
 
-              {/* Tech icons floating around */}
-              {['React', 'Next.js', 'TypeScript', 'Node.js'].map((tech, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0 }}
-                  animate={isInView ? { opacity: 1 } : {}}
-                  transition={{ delay: 1 + i * 0.2 }}
-                  className="absolute"
-                  style={{
-                    top: `${20 + i * 15}%`,
-                    left: i % 2 === 0 ? '-10%' : 'auto',
-                    right: i % 2 === 1 ? '-10%' : 'auto',
-                  }}
-                >
-                  <motion.div
-                    animate={{
-                      y: [0, -10, 0],
-                    }}
-                    transition={{
-                      duration: 3 + i,
-                      repeat: Infinity,
-                      ease: "linear",
-                      delay: i * 0.5,
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-xs text-white whitespace-nowrap"
+            {/* Clean Grid of Tech Stack Icons */}
+            <div className="w-full max-w-sm grid grid-cols-3 gap-2">
+              {techStack.map((tech) => {
+                const Icon = tech.icon;
+                return (
+                  <div
+                    key={tech.name}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 text-xs font-semibold text-zinc-800 dark:text-zinc-300 hover:border-emerald-500/40 hover:text-emerald-600 dark:hover:text-white transition-colors duration-200 shadow-sm"
                   >
-                    {tech}
-                  </motion.div>
-                </motion.div>
-              ))}
+                    <Icon className={`text-sm ${tech.color}`} />
+                    <span className="truncate">{tech.name}</span>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
+
         </div>
       </div>
-
-
     </section>
   );
 }
