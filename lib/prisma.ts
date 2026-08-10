@@ -15,7 +15,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const connectionString = "postgresql://neondb_owner:npg_OcpR6lFnX2Kq@ep-wandering-pond-axuq2mj0-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
     throw new Error('DATABASE_URL is not defined in environment variables or .env.local');

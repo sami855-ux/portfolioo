@@ -1,7 +1,10 @@
 // app/api/upload/route.ts
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { put } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
+
+const MAX_UPLOAD_SIZE = 4 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,10 +36,9 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      // Check file size (5MB limit for images)
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > MAX_UPLOAD_SIZE) {
         return NextResponse.json(
-          { error: 'Image size too large. Maximum size is 5MB.' },
+          { error: 'Image size too large. Maximum size is 4MB.' },
           { status: 400 }
         );
       }
@@ -55,36 +57,45 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check file size (10MB limit for resumes)
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > MAX_UPLOAD_SIZE) {
         return NextResponse.json(
-          { error: 'Resume size too large. Maximum size is 10MB.' },
+          { error: 'Resume size too large. Maximum size is 4MB.' },
           { status: 400 }
         );
       }
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create unique filename
-    const timestamp = Date.now();
     const originalName = file.name.replace(/[^a-zA-Z0-9.]/g, '-');
-    const filename = `${timestamp}-${originalName}`;
-    
-    // Determine upload directory
+    const pathname = `${type}/${originalName}`;
+
+    // Hosted deployments need durable object storage. A runtime write to public/
+    // disappears when a serverless instance is recycled.
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const blob = await put(pathname, file, {
+        access: 'public',
+        addRandomSuffix: true,
+        contentType: file.type,
+      });
+
+      return NextResponse.json({ url: blob.url, success: true });
+    }
+
+    // Keep local development convenient, but never pretend ephemeral production
+    // storage is persistent.
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'File storage is not configured. Connect a public Vercel Blob store and redeploy.' },
+        { status: 503 }
+      );
+    }
+
+    const bytes = await file.arrayBuffer();
+    const filename = `${Date.now()}-${originalName}`;
     const uploadDir = path.join(process.cwd(), 'public/uploads', type);
     await mkdir(uploadDir, { recursive: true });
-    
-    // Save file
-    const filepath = path.join(uploadDir, filename);
-    await writeFile(filepath, buffer);
-    
-    // Return accessible URL
-    const url = `/uploads/${type}/${filename}`;
-    
-    return NextResponse.json({ url, success: true });
+    await writeFile(path.join(uploadDir, filename), Buffer.from(bytes));
+
+    return NextResponse.json({ url: `/uploads/${type}/${filename}`, success: true });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(

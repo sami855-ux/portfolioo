@@ -18,6 +18,11 @@ export interface Hero {
   socialLinks?: SocialLinks;
 }
 
+export interface UploadResponse {
+  url: string;
+  success: boolean;
+}
+
 export interface ContactInfo {
   email?: string;
   location?: string;

@@ -22,7 +22,7 @@ const heroData = {
   professionalTitle: 'Full-Stack Developer',
   tagline: 'Building elegant solutions to complex problems',
   profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-  resumeLink: '/resume.pdf',
+  resumeLink: '',
   githubLink: 'https://github.com/johndoe',
   linkedinLink: 'https://linkedin.com/in/johndoe',
   email: 'yenesh2022@gmail.com',

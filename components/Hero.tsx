@@ -71,7 +71,7 @@ export default function Hero({ data }: { data: HeroType }) {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-4 text-zinc-900 dark:text-white"
             >
-              Hi, I'm{' '}
+              Hi, I&apos;m{' '}
               <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-300 bg-clip-text text-transparent">
                 {data.fullName}
               </span>
@@ -112,15 +112,18 @@ export default function Hero({ data }: { data: HeroType }) {
                 <FaArrowRight className="text-xs" />
               </a>
 
-              <a
-                href={data.resumeLink || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 hover:border-emerald-500/50 text-zinc-800 dark:text-zinc-200 text-sm font-semibold flex items-center gap-2 transition-colors duration-200 shadow-sm"
-              >
-                <FaDownload className="text-xs text-emerald-600 dark:text-emerald-400" />
-                <span>Resume</span>
-              </a>
+              {data.resumeLink && (
+                <a
+                  href={data.resumeLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open resume in a new tab"
+                  className="px-6 py-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 hover:border-emerald-500/50 text-zinc-800 dark:text-zinc-200 text-sm font-semibold flex items-center gap-2 transition-colors duration-200 shadow-sm"
+                >
+                  <FaDownload className="text-xs text-emerald-600 dark:text-emerald-400" />
+                  <span>Resume</span>
+                </a>
+              )}
 
               {/* Social Links */}
               <div className="flex items-center gap-2 pl-2">

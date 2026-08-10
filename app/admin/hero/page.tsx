@@ -83,7 +83,7 @@ export default function HeroAdmin() {
     setTimeout(() => setSaveMessage(null), 3000);
   };
 
-  const handleImageUpload = async (file: File): Promise<string | null> => {
+  const handleImageUpload = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', 'image');
@@ -103,11 +103,11 @@ export default function HeroAdmin() {
       }
     } catch (error) {
       showNotification('error', error instanceof Error ? error.message : 'Failed to upload image');
-      return null;
+      throw error;
     }
   };
 
-  const handleResumeUpload = async (file: File): Promise<string | null> => {
+  const handleResumeUpload = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', 'resume');
@@ -127,7 +127,7 @@ export default function HeroAdmin() {
       }
     } catch (error) {
       showNotification('error', error instanceof Error ? error.message : 'Failed to upload resume');
-      return null;
+      throw error;
     }
   };
 
@@ -138,24 +138,20 @@ export default function HeroAdmin() {
     setUploadProgress(0);
 
     try {
-      let updatedHero = { ...hero };
+      const updatedHero = { ...hero };
 
       // Upload image if selected
       if (imageFile) {
         setUploadProgress(30);
         const imageUrl = await handleImageUpload(imageFile);
-        if (imageUrl) {
-          updatedHero.profileImage = imageUrl;
-        }
+        updatedHero.profileImage = imageUrl;
       }
 
       // Upload resume if selected
       if (resumeFile) {
         setUploadProgress(60);
         const resumeUrl = await handleResumeUpload(resumeFile);
-        if (resumeUrl) {
-          updatedHero.resumeLink = resumeUrl;
-        }
+        updatedHero.resumeLink = resumeUrl;
       }
 
       setUploadProgress(90);
@@ -176,7 +172,7 @@ export default function HeroAdmin() {
         throw new Error('Failed to save');
       }
     } catch (error) {
-      showNotification('error', 'Error saving changes. Please try again.');
+      showNotification('error', error instanceof Error ? error.message : 'Error saving changes. Please try again.');
     } finally {
       setIsSaving(false);
       setUploadProgress(0);
@@ -509,7 +505,7 @@ export default function HeroAdmin() {
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      Recommended: Square image, at least 400x400 pixels. Max size: 5MB.
+                      Recommended: Square image, at least 400x400 pixels. Max size: 4MB.
                     </p>
                   </div>
                 </div>
@@ -594,7 +590,7 @@ export default function HeroAdmin() {
                         </div>
                       </div>
                       <p className="text-xs text-gray-500">
-                        Accepted formats: PDF, DOC, DOCX. Max size: 10MB.
+                        Accepted formats: PDF, DOC, DOCX. Max size: 4MB.
                       </p>
                     </div>
                   </div>
