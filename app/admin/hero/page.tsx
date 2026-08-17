@@ -1,6 +1,7 @@
 'use client';
 
 import { Hero, SocialLinks, UploadResponse } from '@/types';
+import { getValidFileUrl } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, ChangeEvent, FormEvent } from 'react';
@@ -50,6 +51,7 @@ export default function HeroAdmin() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [copied, setCopied] = useState<boolean>(false);
+  const [isUploadingResume, setIsUploadingResume] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -195,19 +197,37 @@ export default function HeroAdmin() {
     }
   };
 
-  const handleResumeChange = (e: ChangeEvent<HTMLInputElement>): void => {
+  const handleResumeChange = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0];
-    if (file) {
-      const validTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ];
-      if (validTypes.includes(file.type)) {
-        setResumeFile(file);
-      } else {
-        showNotification('error', 'Please select a PDF or Word document');
-      }
+    if (!file) return;
+
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      showNotification('error', 'Please select a PDF or Word document');
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      showNotification('error', 'Resume file size exceeds 4MB limit.');
+      return;
+    }
+
+    setIsUploadingResume(true);
+    setResumeFile(file);
+
+    try {
+      const uploadedUrl = await handleResumeUpload(file);
+      setHero(prev => ({ ...prev, resumeLink: uploadedUrl }));
+      showNotification('success', 'Resume uploaded successfully!');
+    } catch {
+      showNotification('error', 'Failed to upload resume');
+    } finally {
+      setIsUploadingResume(false);
     }
   };
 
@@ -535,8 +555,17 @@ export default function HeroAdmin() {
                             htmlFor="resume-upload"
                             className="flex items-center justify-center gap-2 w-full px-4 py-8 bg-[#1A1A1A] border-2 border-dashed border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 cursor-pointer transition-all"
                           >
-                            <FiUpload className="text-xl" />
-                            <span>Click to upload or drag and drop</span>
+                            {isUploadingResume ? (
+                              <>
+                                <FiRefreshCw className="text-xl animate-spin text-indigo-400" />
+                                <span className="text-indigo-400 font-medium">Uploading resume...</span>
+                              </>
+                            ) : (
+                              <>
+                                <FiUpload className="text-xl text-indigo-400" />
+                                <span>Click to upload PDF / Word document</span>
+                              </>
+                            )}
                           </label>
                           {resumeFile && (
                             <div className="mt-3 flex items-center justify-between bg-[#1A1A1A] p-3 rounded-lg border border-gray-700">
@@ -576,7 +605,7 @@ export default function HeroAdmin() {
                                   <FiCopy />
                                 </button>
                                 <a
-                                  href={hero.resumeLink}
+                                  href={getValidFileUrl(hero.resumeLink)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="p-1 hover:bg-blue-500/10 rounded-lg text-blue-400"

@@ -1,6 +1,7 @@
 'use client';
 
 import { Project } from '@/types';
+import { getValidImageUrl } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
@@ -10,6 +11,8 @@ import {
   FaStar
 } from 'react-icons/fa';
 import { HiOutlineChip } from 'react-icons/hi';
+
+const DEFAULT_PROJECT_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop';
 
 export default function Projects({ data }: { data: Project[] }) {
   const ref = useRef(null);
@@ -104,7 +107,7 @@ export default function Projects({ data }: { data: Project[] }) {
                 {/* Image Frame */}
                 <div className="relative h-44 overflow-hidden bg-zinc-100 dark:bg-zinc-950">
                   <Image
-                    src={project.image || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&h=400&fit=crop'}
+                    src={getValidImageUrl(project.image, DEFAULT_PROJECT_IMAGE)}
                     alt={project.title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"

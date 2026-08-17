@@ -1,14 +1,18 @@
 'use client';
 
 import { Hero as HeroType } from '@/types';
+import { getValidImageUrl, getValidFileUrl } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
 import Image from 'next/image';
+
+const DEFAULT_HERO_IMAGE = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop';
 import { useRef } from 'react';
 import {
   FaArrowRight,
   FaCode,
   FaDatabase,
   FaDownload,
+  FaEye,
   FaEnvelope,
   FaGithub,
   FaLayerGroup,
@@ -114,14 +118,14 @@ export default function Hero({ data }: { data: HeroType }) {
 
               {data.resumeLink && (
                 <a
-                  href={data.resumeLink}
+                  href={getValidFileUrl(data.resumeLink)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Open resume in a new tab"
+                  aria-label="View resume in a new tab"
                   className="px-6 py-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 hover:border-emerald-500/50 text-zinc-800 dark:text-zinc-200 text-sm font-semibold flex items-center gap-2 transition-colors duration-200 shadow-sm"
                 >
-                  <FaDownload className="text-xs text-emerald-600 dark:text-emerald-400" />
-                  <span>Resume</span>
+                  <FaEye className="text-xs text-emerald-600 dark:text-emerald-400" />
+                  <span>View Resume</span>
                 </a>
               )}
 
@@ -171,7 +175,7 @@ export default function Hero({ data }: { data: HeroType }) {
               <div className="relative w-full h-full rounded-full p-1.5 bg-gradient-to-b from-emerald-500/30 via-zinc-200 to-white dark:via-zinc-900 dark:to-zinc-900 border border-zinc-200 dark:border-emerald-500/40 overflow-hidden shadow-2xl">
                 <div className="relative w-full h-full rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-950">
                   <Image
-                    src={data.profileImage || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop'}
+                    src={getValidImageUrl(data.profileImage, DEFAULT_HERO_IMAGE)}
                     alt={data.fullName}
                     fill
                     className="object-cover"
