@@ -1,6 +1,7 @@
 'use client';
 
 import { Education } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -25,7 +26,8 @@ import {
 export default function EducationAdmin() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [education, setEducation] = useState<Education[]>([]);
+  const queryClient = useQueryClient();
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentEdu, setCurrentEdu] = useState<Partial<Education>>({
     institution: '',
@@ -36,99 +38,94 @@ export default function EducationAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterYear, setFilterYear] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [selectedEdu, setSelectedEdu] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
+  // React Query data fetching
+  const { data: education = [], isLoading } = useQuery<Education[]>({
+    queryKey: ['education'],
+    queryFn: async () => {
+      const res = await fetch('/api/education');
+      if (!res.ok) throw new Error('Failed to fetch education data');
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  // React Query mutations
+  const saveEducationMutation = useMutation({
+    mutationFn: async (eduData: Partial<Education>) => {
+      const method = eduData.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/education', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eduData),
+      });
+      if (!res.ok) throw new Error('Failed to save education');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['education'] });
+      setIsEditing(false);
+      setCurrentEdu({ institution: '', degree: '', year: '', description: '' });
+      showNotification('success', `Education ${currentEdu.id ? 'updated' : 'added'} successfully!`);
+    },
+    onError: () => {
+      showNotification('error', 'Failed to save education');
+    },
+  });
+
+  const deleteEducationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/education?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete education');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['education'] });
+      setDeleteConfirm(null);
+      showNotification('success', 'Education deleted successfully');
+    },
+    onError: () => {
+      showNotification('error', 'Failed to delete education');
+    },
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchEducation();
     }
   }, [status, router]);
-
-  const fetchEducation = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/education');
-      const data = await res.json();
-      setEducation(data);
-    } catch (error) {
-      showNotification('error', 'Failed to fetch education data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const method = currentEdu.id ? 'PUT' : 'POST';
-      const res = await fetch('/api/education', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentEdu),
-      });
-
-      if (res.ok) {
-        await fetchEducation();
-        setIsEditing(false);
-        setCurrentEdu({ institution: '', degree: '', year: '', description: '' });
-        showNotification('success', `Education ${currentEdu.id ? 'updated' : 'added'} successfully!`);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to save education');
-    } finally {
-      setIsLoading(false);
-    }
+    saveEducationMutation.mutate(currentEdu);
   };
 
-  const handleDelete = async (id: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/education?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchEducation();
-        setDeleteConfirm(null);
-        showNotification('success', 'Education deleted successfully');
-      } else {
-        throw new Error('Failed to delete');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to delete education');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDelete = (id: string) => {
+    deleteEducationMutation.mutate(id);
   };
 
   const handleBulkDelete = async () => {
     if (selectedEdu.length === 0) return;
     
     if (confirm(`Are you sure you want to delete ${selectedEdu.length} items?`)) {
-      setIsLoading(true);
       try {
         await Promise.all(selectedEdu.map(id => 
           fetch(`/api/education?id=${id}`, { method: 'DELETE' })
         ));
-        await fetchEducation();
+        queryClient.invalidateQueries({ queryKey: ['education'] });
         setSelectedEdu([]);
         showNotification('success', `${selectedEdu.length} items deleted successfully`);
       } catch (error) {
         showNotification('error', 'Failed to delete items');
-      } finally {
-        setIsLoading(false);
       }
     }
   };

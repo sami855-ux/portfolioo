@@ -1,6 +1,7 @@
 'use client';
 
 import { Skill } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -31,7 +32,8 @@ import {
 export default function SkillsAdmin() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const queryClient = useQueryClient();
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentSkill, setCurrentSkill] = useState<Partial<Skill>>({
     name: '',
@@ -43,7 +45,6 @@ export default function SkillsAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -53,8 +54,7 @@ export default function SkillsAdmin() {
 
   const categories = ['Frontend', 'Backend', 'Machine Learning', 'Tools', 'Database', 'Cloud', 'Mobile', 'Design'];
   
-  // Category icons mapping
-  const categoryIcons = {
+  const categoryIcons: Record<string, React.ReactNode> = {
     'Frontend': <FiCode />,
     'Backend': <FiDatabase />,
     'Machine Learning': <FiCpu />,
@@ -64,94 +64,84 @@ export default function SkillsAdmin() {
     'Mobile': <FiLayers />,
     'Design': <FiAward />
   };
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchSkills();
-    }
-  }, [status, router]);
-
-  const fetchSkills = async () => {
-    setIsLoading(true);
-    try {
+  
+  // React Query data fetching
+  const { data: skills = [], isLoading } = useQuery<Skill[]>({
+    queryKey: ['skills'],
+    queryFn: async () => {
       const res = await fetch('/api/skills');
-      const data = await res.json();
-      setSkills(data);
-    } catch (error) {
-      showNotification('error', 'Failed to fetch skills');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (!res.ok) throw new Error('Failed to fetch skills');
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  // React Query mutations
+  const saveSkillMutation = useMutation({
+    mutationFn: async (skillData: Partial<Skill>) => {
+      const method = skillData.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/skills', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(skillData),
+      });
+      if (!res.ok) throw new Error('Failed to save skill');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      setIsEditing(false);
+      setCurrentSkill({ name: '', category: 'Frontend', proficiency: 50, icon: '', description: '' });
+      showNotification('success', `Skill ${currentSkill.id ? 'updated' : 'added'} successfully!`);
+    },
+    onError: () => {
+      showNotification('error', 'Failed to save skill');
+    },
+  });
+
+  const deleteSkillMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/skills?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete skill');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      setDeleteConfirm(null);
+      showNotification('success', 'Skill deleted successfully');
+    },
+    onError: () => {
+      showNotification('error', 'Failed to delete skill');
+    },
+  });
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const method = currentSkill.id ? 'PUT' : 'POST';
-      const res = await fetch('/api/skills', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentSkill),
-      });
-
-      if (res.ok) {
-        await fetchSkills();
-        setIsEditing(false);
-        setCurrentSkill({ name: '', category: 'Frontend', proficiency: 50, icon: '', description: '' });
-        showNotification('success', `Skill ${currentSkill.id ? 'updated' : 'added'} successfully!`);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to save skill');
-    } finally {
-      setIsLoading(false);
-    }
+    saveSkillMutation.mutate(currentSkill);
   };
 
-  const handleDelete = async (id: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/skills?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchSkills();
-        setDeleteConfirm(null);
-        showNotification('success', 'Skill deleted successfully');
-      } else {
-        throw new Error('Failed to delete');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to delete skill');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDelete = (id: string) => {
+    deleteSkillMutation.mutate(id);
   };
 
   const handleBulkDelete = async () => {
     if (selectedSkills.length === 0) return;
     
     if (confirm(`Are you sure you want to delete ${selectedSkills.length} skills?`)) {
-      setIsLoading(true);
       try {
         await Promise.all(selectedSkills.map(id => 
           fetch(`/api/skills?id=${id}`, { method: 'DELETE' })
         ));
-        await fetchSkills();
+        queryClient.invalidateQueries({ queryKey: ['skills'] });
         setSelectedSkills([]);
         showNotification('success', `${selectedSkills.length} skills deleted successfully`);
       } catch (error) {
         showNotification('error', 'Failed to delete skills');
-      } finally {
-        setIsLoading(false);
       }
     }
   };

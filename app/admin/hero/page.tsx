@@ -2,6 +2,7 @@
 
 import { Hero, SocialLinks, UploadResponse } from '@/types';
 import { getValidFileUrl } from '@/lib/utils';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, ChangeEvent, FormEvent } from 'react';
@@ -35,6 +36,8 @@ interface NotificationMessage {
 export default function HeroAdmin() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [hero, setHero] = useState<Partial<Hero>>({
     fullName: '',
     professionalTitle: '',
@@ -57,28 +60,51 @@ export default function HeroAdmin() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchHero();
-    }
-  }, [status, router]);
-
-  const fetchHero = async (): Promise<void> => {
-    try {
+  // React Query data fetching
+  const { data: heroData } = useQuery<Hero>({
+    queryKey: ['hero'],
+    queryFn: async () => {
       const res = await fetch('/api/hero');
-      const data: Hero = await res.json();
-      if (data.fullName) {
-        setHero(data);
-        if (data.profileImage) {
-          setImagePreview(data.profileImage);
-        }
+      if (!res.ok) throw new Error('Failed to fetch hero data');
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  useEffect(() => {
+    if (heroData && heroData.fullName) {
+      setHero(heroData);
+      if (heroData.profileImage) {
+        setImagePreview(heroData.profileImage);
       }
-    } catch (error) {
-      showNotification('error', 'Failed to fetch hero data');
     }
-  };
+  }, [heroData]);
+
+  // React Query mutation
+  const saveHeroMutation = useMutation({
+    mutationFn: async (updatedHeroData: Partial<Hero>) => {
+      const res = await fetch('/api/hero', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedHeroData),
+      });
+      if (!res.ok) throw new Error('Failed to save hero section');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hero'] });
+      showNotification('success', 'Hero section updated successfully!');
+      setImageFile(null);
+      setResumeFile(null);
+    },
+    onError: (error: Error) => {
+      showNotification('error', error.message || 'Error saving changes. Please try again.');
+    },
+    onSettled: () => {
+      setIsSaving(false);
+      setUploadProgress(0);
+    },
+  });
 
   const showNotification = (type: 'success' | 'error', message: string): void => {
     setSaveMessage({ type, text: message });
@@ -157,25 +183,9 @@ export default function HeroAdmin() {
       }
 
       setUploadProgress(90);
-
-      const res = await fetch('/api/hero', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedHero),
-      });
-
-      if (res.ok) {
-        setUploadProgress(100);
-        showNotification('success', 'Hero section updated successfully!');
-        setImageFile(null);
-        setResumeFile(null);
-        await fetchHero(); // Refresh data
-      } else {
-        throw new Error('Failed to save');
-      }
+      saveHeroMutation.mutate(updatedHero);
     } catch (error) {
       showNotification('error', error instanceof Error ? error.message : 'Error saving changes. Please try again.');
-    } finally {
       setIsSaving(false);
       setUploadProgress(0);
     }
@@ -259,7 +269,7 @@ export default function HeroAdmin() {
   };
 
   const resetForm = (): void => {
-    fetchHero();
+    queryClient.invalidateQueries({ queryKey: ['hero'] });
     setImageFile(null);
     setResumeFile(null);
     if (imageInputRef.current) imageInputRef.current.value = '';

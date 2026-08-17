@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,6 +30,8 @@ import {
   FiAlertTriangle
 } from 'react-icons/fi';
 
+import { useQuery } from '@tanstack/react-query';
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -40,12 +43,45 @@ export default function DashboardPage() {
     setIsLoggingOut(true);
     await signOut({ callbackUrl: '/admin/login' });
   };
-  const [stats, setStats] = useState({
-    totalProjects: 12,
-    totalSkills: 24,
-    totalExperience: 5,
-    totalVisitors: 1234
+
+  // React Query dynamic stat fetching
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const res = await fetch('/api/projects');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: status === 'authenticated',
   });
+
+  const { data: skills = [] } = useQuery({
+    queryKey: ['skills'],
+    queryFn: async () => {
+      const res = await fetch('/api/skills');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  const { data: experience = [] } = useQuery({
+    queryKey: ['experience'],
+    queryFn: async () => {
+      const res = await fetch('/api/experience');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  const stats = {
+    totalProjects: projects.length || 0,
+    totalSkills: skills.length || 0,
+    totalExperience: experience.length || 0,
+    totalVisitors: 1234
+  };
+
   const [recentActivity, setRecentActivity] = useState([
     { action: 'Updated Hero Section', time: '2 hours ago', status: 'success' },
     { action: 'Added new project', time: '5 hours ago', status: 'success' },
@@ -272,10 +308,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="relative p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition">
-                <FiBell className="text-xl" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+              <NotificationDropdown />
               <button className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition">
                 <FiSettings className="text-xl" />
               </button>
@@ -306,37 +339,48 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-500">Total Projects</p>
             </div>
 
-            <div className="bg-[#0F0F0F] p-6 rounded-xl border border-gray-800/50 hover:border-gray-700/50 transition">
+            <div className="bg-[#121212]/80 backdrop-blur-xl p-6 rounded-2xl border border-zinc-800/80 hover:border-blue-500/40 transition-all duration-300 shadow-md hover:shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-500/10 rounded-lg">
+                <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                  <FiFolder className="text-blue-400 text-xl" />
+                </div>
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+12%</span>
+              </div>
+              <h3 className="text-3xl font-extrabold text-white mb-1">{stats.totalProjects}</h3>
+              <p className="text-xs font-medium text-zinc-400">Total Projects</p>
+            </div>
+
+            <div className="bg-[#121212]/80 backdrop-blur-xl p-6 rounded-2xl border border-zinc-800/80 hover:border-purple-500/40 transition-all duration-300 shadow-md hover:shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/20">
                   <FiCode className="text-purple-400 text-xl" />
                 </div>
-                <span className="text-xs text-gray-500">+8%</span>
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+8%</span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-1">{stats.totalSkills}</h3>
-              <p className="text-sm text-gray-500">Skills</p>
+              <h3 className="text-3xl font-extrabold text-white mb-1">{stats.totalSkills}</h3>
+              <p className="text-xs font-medium text-zinc-400">Skills & Tech</p>
             </div>
 
-            <div className="bg-[#0F0F0F] p-6 rounded-xl border border-gray-800/50 hover:border-gray-700/50 transition">
+            <div className="bg-[#121212]/80 backdrop-blur-xl p-6 rounded-2xl border border-zinc-800/80 hover:border-emerald-500/40 transition-all duration-300 shadow-md hover:shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-500/10 rounded-lg">
-                  <FiBriefcase className="text-green-400 text-xl" />
+                <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                  <FiBriefcase className="text-emerald-400 text-xl" />
                 </div>
-                <span className="text-xs text-gray-500">+5%</span>
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+5%</span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-1">{stats.totalExperience}</h3>
-              <p className="text-sm text-gray-500">Years Experience</p>
+              <h3 className="text-3xl font-extrabold text-white mb-1">{stats.totalExperience}</h3>
+              <p className="text-xs font-medium text-zinc-400">Years Experience</p>
             </div>
 
-            <div className="bg-[#0F0F0F] p-6 rounded-xl border border-gray-800/50 hover:border-gray-700/50 transition">
+            <div className="bg-[#121212]/80 backdrop-blur-xl p-6 rounded-2xl border border-zinc-800/80 hover:border-pink-500/40 transition-all duration-300 shadow-md hover:shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-pink-500/10 rounded-lg">
+                <div className="p-3 bg-pink-500/10 rounded-xl border border-pink-500/20">
                   <FiUsers className="text-pink-400 text-xl" />
                 </div>
-                <span className="text-xs text-gray-500">+23%</span>
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+23%</span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-1">{stats.totalVisitors}</h3>
-              <p className="text-sm text-gray-500">Visitors</p>
+              <h3 className="text-3xl font-extrabold text-white mb-1">{stats.totalVisitors}</h3>
+              <p className="text-xs font-medium text-zinc-400">Site Visitors</p>
             </div>
           </div>
 

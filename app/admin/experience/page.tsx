@@ -1,6 +1,7 @@
 'use client';
 
 import { Experience } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -27,7 +28,8 @@ import {
 export default function ExperienceAdmin() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const queryClient = useQueryClient();
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentExp, setCurrentExp] = useState<Partial<Experience>>({
     role: '',
@@ -42,7 +44,6 @@ export default function ExperienceAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCompany, setFilterCompany] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [selectedExp, setSelectedExp] = useState<string[]>([]);
@@ -51,102 +52,98 @@ export default function ExperienceAdmin() {
   const [newResponsibility, setNewResponsibility] = useState('');
   const [newTechnology, setNewTechnology] = useState('');
 
+  // React Query data fetching
+  const { data: experiences = [], isLoading } = useQuery<Experience[]>({
+    queryKey: ['experience'],
+    queryFn: async () => {
+      const res = await fetch('/api/experience');
+      if (!res.ok) throw new Error('Failed to fetch experience data');
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  // React Query mutations
+  const saveExperienceMutation = useMutation({
+    mutationFn: async (expData: Partial<Experience>) => {
+      const method = expData.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/experience', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(expData),
+      });
+      if (!res.ok) throw new Error('Failed to save experience');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experience'] });
+      setIsEditing(false);
+      setCurrentExp({ 
+        role: '', 
+        company: '', 
+        duration: '', 
+        description: '', 
+        responsibilities: [],
+        location: '',
+        type: 'Full-time',
+        technologies: []
+      });
+      showNotification('success', `Experience ${currentExp.id ? 'updated' : 'added'} successfully!`);
+    },
+    onError: () => {
+      showNotification('error', 'Failed to save experience');
+    },
+  });
+
+  const deleteExperienceMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/experience?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete experience');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experience'] });
+      setDeleteConfirm(null);
+      showNotification('success', 'Experience deleted successfully');
+    },
+    onError: () => {
+      showNotification('error', 'Failed to delete experience');
+    },
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchExperiences();
     }
   }, [status, router]);
-
-  const fetchExperiences = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/experience');
-      const data = await res.json();
-      setExperiences(data);
-    } catch (error) {
-      showNotification('error', 'Failed to fetch experience data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const method = currentExp.id ? 'PUT' : 'POST';
-      const res = await fetch('/api/experience', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentExp),
-      });
-
-      if (res.ok) {
-        await fetchExperiences();
-        setIsEditing(false);
-        setCurrentExp({ 
-          role: '', 
-          company: '', 
-          duration: '', 
-          description: '', 
-          responsibilities: [],
-          location: '',
-          type: 'Full-time',
-          technologies: []
-        });
-        showNotification('success', `Experience ${currentExp.id ? 'updated' : 'added'} successfully!`);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to save experience');
-    } finally {
-      setIsLoading(false);
-    }
+    saveExperienceMutation.mutate(currentExp);
   };
 
-  const handleDelete = async (id: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/experience?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchExperiences();
-        setDeleteConfirm(null);
-        showNotification('success', 'Experience deleted successfully');
-      } else {
-        throw new Error('Failed to delete');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to delete experience');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDelete = (id: string) => {
+    deleteExperienceMutation.mutate(id);
   };
 
   const handleBulkDelete = async () => {
     if (selectedExp.length === 0) return;
     
     if (confirm(`Are you sure you want to delete ${selectedExp.length} items?`)) {
-      setIsLoading(true);
       try {
         await Promise.all(selectedExp.map(id => 
           fetch(`/api/experience?id=${id}`, { method: 'DELETE' })
         ));
-        await fetchExperiences();
+        queryClient.invalidateQueries({ queryKey: ['experience'] });
         setSelectedExp([]);
         showNotification('success', `${selectedExp.length} items deleted successfully`);
       } catch (error) {
         showNotification('error', 'Failed to delete items');
-      } finally {
-        setIsLoading(false);
       }
     }
   };

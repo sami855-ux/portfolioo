@@ -171,17 +171,20 @@ export default function Hero({ data }: { data: HeroType }) {
             className="lg:col-span-5 flex flex-col items-center"
           >
             <div className="relative w-full max-w-xs sm:max-w-sm aspect-square mb-8">
+              {/* Glowing Background Ring */}
+              <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-30 blur-2xl animate-pulse-slow" />
+              
               {/* Fully Rounded Profile Image Frame */}
-              <div className="relative w-full h-full rounded-full p-1.5 bg-gradient-to-b from-emerald-500/30 via-zinc-200 to-white dark:via-zinc-900 dark:to-zinc-900 border border-zinc-200 dark:border-emerald-500/40 overflow-hidden shadow-2xl">
+              <div className="relative w-full h-full rounded-full p-1.5 bg-gradient-to-b from-emerald-500/40 via-zinc-200 to-white dark:via-zinc-900 dark:to-zinc-900 border border-zinc-200 dark:border-emerald-500/50 overflow-hidden shadow-glow-emerald">
                 <div className="relative w-full h-full rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-950">
                   <Image
                     src={getValidImageUrl(data.profileImage, DEFAULT_HERO_IMAGE)}
                     alt={data.fullName}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-700 hover:scale-105"
                     priority
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 dark:from-black/50 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 dark:from-black/60 via-transparent to-transparent" />
                 </div>
               </div>
 
@@ -204,7 +207,7 @@ export default function Hero({ data }: { data: HeroType }) {
                 return (
                   <div
                     key={tech.name}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 text-xs font-semibold text-zinc-800 dark:text-zinc-300 hover:border-emerald-500/40 hover:text-emerald-600 dark:hover:text-white transition-colors duration-200 shadow-sm"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-white hover:scale-105 transition-all duration-200 shadow-sm"
                   >
                     <Icon className={`text-sm ${tech.color}`} />
                     <span className="truncate">{tech.name}</span>

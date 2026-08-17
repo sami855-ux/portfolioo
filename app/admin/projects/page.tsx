@@ -1,6 +1,7 @@
 'use client';
 
 import { Project } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -30,7 +31,8 @@ import {
 export default function ProjectsAdmin() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const queryClient = useQueryClient();
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState<Partial<Project>>({
     title: '',
@@ -46,7 +48,6 @@ export default function ProjectsAdmin() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterFeatured, setFilterFeatured] = useState<'all' | 'featured' | 'regular'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -58,103 +59,93 @@ export default function ProjectsAdmin() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchProjects();
-    }
-  }, [status, router]);
-
-  const fetchProjects = async () => {
-    setIsLoading(true);
-    try {
+  // React Query data fetching
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
+    queryKey: ['projects'],
+    queryFn: async () => {
       const res = await fetch('/api/projects');
-      const data = await res.json();
-      setProjects(data);
-    } catch (error) {
-      showNotification('error', 'Failed to fetch projects');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (!res.ok) throw new Error('Failed to fetch projects');
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
+  // React Query mutations
+  const saveProjectMutation = useMutation({
+    mutationFn: async (projectData: Partial<Project>) => {
+      const method = projectData.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/projects', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData),
+      });
+      if (!res.ok) throw new Error('Failed to save project');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setIsEditing(false);
+      setCurrentProject({
+        title: '',
+        description: '',
+        technologies: [],
+        image: '',
+        githubLink: '',
+        liveLink: '',
+        featured: false,
+        category: '',
+      });
+      setImagePreview(null);
+      showNotification('success', `Project ${currentProject.id ? 'updated' : 'added'} successfully!`);
+    },
+    onError: () => {
+      showNotification('error', 'Failed to save project');
+    },
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/projects?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete project');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setDeleteConfirm(null);
+      showNotification('success', 'Project deleted successfully');
+    },
+    onError: () => {
+      showNotification('error', 'Failed to delete project');
+    },
+  });
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const method = currentProject.id ? 'PUT' : 'POST';
-      const res = await fetch('/api/projects', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentProject),
-      });
-
-      if (res.ok) {
-        await fetchProjects();
-        setIsEditing(false);
-        setCurrentProject({
-          title: '',
-          description: '',
-          technologies: [],
-          image: '',
-          githubLink: '',
-          liveLink: '',
-          featured: false,
-          category: '',
-        });
-        setImagePreview(null);
-        showNotification('success', `Project ${currentProject.id ? 'updated' : 'added'} successfully!`);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to save project');
-    } finally {
-      setIsLoading(false);
-    }
+    saveProjectMutation.mutate(currentProject);
   };
 
-  const handleDelete = async (id: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/projects?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchProjects();
-        setDeleteConfirm(null);
-        showNotification('success', 'Project deleted successfully');
-      } else {
-        throw new Error('Failed to delete');
-      }
-    } catch (error) {
-      showNotification('error', 'Failed to delete project');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDelete = (id: string) => {
+    deleteProjectMutation.mutate(id);
   };
 
   const handleBulkDelete = async () => {
     if (selectedProjects.length === 0) return;
     
     if (confirm(`Are you sure you want to delete ${selectedProjects.length} projects?`)) {
-      setIsLoading(true);
       try {
         await Promise.all(selectedProjects.map(id => 
           fetch(`/api/projects?id=${id}`, { method: 'DELETE' })
         ));
-        await fetchProjects();
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
         setSelectedProjects([]);
         showNotification('success', `${selectedProjects.length} projects deleted successfully`);
       } catch (error) {
         showNotification('error', 'Failed to delete projects');
-      } finally {
-        setIsLoading(false);
       }
     }
   };

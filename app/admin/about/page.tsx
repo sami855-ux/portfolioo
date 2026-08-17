@@ -1,6 +1,7 @@
 'use client';
 
 import { About } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -24,6 +25,8 @@ import {
 export default function AboutAdmin() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [about, setAbout] = useState<Partial<About>>({
     summary: '',
     careerGoals: '',
@@ -40,56 +43,65 @@ export default function AboutAdmin() {
   const [previewMode, setPreviewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('edit');
 
+  // React Query data fetching
+  const { data: aboutData, refetch } = useQuery<About>({
+    queryKey: ['about'],
+    queryFn: async () => {
+      const res = await fetch('/api/about');
+      if (!res.ok) throw new Error('Failed to fetch about section');
+      return res.json();
+    },
+    enabled: status === 'authenticated',
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchAbout();
     }
   }, [status, router]);
 
-  const fetchAbout = async () => {
-    try {
-      const res = await fetch('/api/about');
-      const data = await res.json();
-      if (data.summary) {
-        setAbout(data);
-        setCharCounts({
-          summary: data.summary?.length || 0,
-          careerGoals: data.careerGoals?.length || 0,
-          bio: data.bio?.length || 0,
-        });
-        setLastSaved(new Date());
-      }
-    } catch (error) {
-      console.error('Error fetching about data:', error);
+  useEffect(() => {
+    if (aboutData && aboutData.summary) {
+      setAbout(aboutData);
+      setCharCounts({
+        summary: aboutData.summary?.length || 0,
+        careerGoals: aboutData.careerGoals?.length || 0,
+        bio: aboutData.bio?.length || 0,
+      });
+      setLastSaved(new Date());
     }
-  };
+  }, [aboutData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setSaveMessage(null);
-
-    try {
+  // React Query mutation
+  const saveAboutMutation = useMutation({
+    mutationFn: async (updatedAboutData: Partial<About>) => {
       const res = await fetch('/api/about', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(about),
+        body: JSON.stringify(updatedAboutData),
       });
-
-      if (res.ok) {
-        setSaveMessage({ type: 'success', text: 'About section updated successfully!' });
-        setLastSaved(new Date());
-        setTimeout(() => setSaveMessage(null), 3000);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
+      if (!res.ok) throw new Error('Failed to save about section');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['about'] });
+      setSaveMessage({ type: 'success', text: 'About section updated successfully!' });
+      setLastSaved(new Date());
+      setTimeout(() => setSaveMessage(null), 3000);
+    },
+    onError: () => {
       setSaveMessage({ type: 'error', text: 'Error saving changes. Please try again.' });
-    } finally {
+    },
+    onSettled: () => {
       setIsSaving(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setSaveMessage(null);
+    saveAboutMutation.mutate(about);
   };
 
   const handleTextChange = (
@@ -101,7 +113,7 @@ export default function AboutAdmin() {
   };
 
   const resetForm = () => {
-    fetchAbout();
+    queryClient.invalidateQueries({ queryKey: ['about'] });
     setSaveMessage({ type: 'success', text: 'Form reset to last saved version' });
     setTimeout(() => setSaveMessage(null), 2000);
   };

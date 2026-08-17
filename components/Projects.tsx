@@ -102,17 +102,17 @@ export default function Projects({ data }: { data: Project[] }) {
               transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
               className="group relative"
             >
-              <div className="relative bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 group-hover:border-emerald-500/50 rounded-xl h-full flex flex-col overflow-hidden transition-all duration-200 shadow-sm">
+              <div className="relative bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 group-hover:border-emerald-500/60 rounded-2xl h-full flex flex-col overflow-hidden transition-all duration-300 shadow-md group-hover:shadow-glow-emerald">
                 
                 {/* Image Frame */}
-                <div className="relative h-44 overflow-hidden bg-zinc-100 dark:bg-zinc-950">
+                <div className="relative h-48 overflow-hidden bg-zinc-100 dark:bg-zinc-950">
                   <Image
                     src={getValidImageUrl(project.image, DEFAULT_PROJECT_IMAGE)}
                     alt={project.title}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/70 via-transparent to-transparent opacity-80" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/20 to-transparent" />
                   
                   {/* Featured badge */}
                   {project.featured && (

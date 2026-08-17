@@ -241,10 +241,34 @@
 
   /* Shadow utilities */
   .shadow-glow-primary {
-    box-shadow: 0 0 20px rgba(var(--accent-primary), 0.3);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
   }
 
   .shadow-glow-primary:hover {
-    box-shadow: 0 0 30px rgba(var(--accent-primary), 0.5);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.45);
+  }
+
+  .shadow-glow-emerald {
+    box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+  }
+
+  .glass-panel-dark {
+    background: rgba(18, 18, 18, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-panel-light {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .bg-grid-pattern {
+    background-size: 3rem 3rem;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   }
 }

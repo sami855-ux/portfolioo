@@ -239,7 +239,7 @@ export default function Contact({ data }: { data?: ContactInfo }) {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="lg:col-span-7"
           >
-            <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 p-7 sm:p-8 rounded-2xl shadow-lg relative overflow-hidden">
+            <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 p-7 sm:p-8 rounded-3xl shadow-xl hover:shadow-glow-emerald transition-all duration-300 relative overflow-hidden">
               
               <AnimatePresence mode="wait">
                 {status === 'success' ? (
